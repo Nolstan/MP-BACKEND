@@ -41,3 +41,34 @@ exports.getBusiness = async (req, res) => {
         });
     }
 };
+
+// @desc    Update business status
+// @route   PUT /api/business/status
+// @access  Private
+exports.updateStatus = async (req, res) => {
+    try {
+        // req.user is already set by protect middleware
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not found',
+            });
+        }
+
+        user.isActive = req.body.isActive;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: user,
+        });
+    } catch (error) {
+        console.error('Update Status Error:', error);
+        res.status(400).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};

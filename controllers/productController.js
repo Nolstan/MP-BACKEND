@@ -75,7 +75,7 @@ exports.getAllProducts = async (req, res) => {
 // @access  Public
 exports.getProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).populate('businessId', 'businessName ownerName location contactInfo bio');
+        const product = await Product.findById(req.params.id).populate('businessId', '_id businessName ownerName location contactInfo bio isActive');
 
         if (!product) {
             return res.status(404).json({
