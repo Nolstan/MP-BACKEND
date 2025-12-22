@@ -1,0 +1,14 @@
+name: Ping Server
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Server
+        run: |
+          curl -I https://market-place-q0q5.onrender.com/api/stats
