@@ -56,11 +56,21 @@ exports.addProduct = async (req, res) => {
 // @access  Public
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find().populate('businessId', 'businessName ownerName');
+        // Only show products from users who are NOT banned
+        const products = await Product.find()
+            .populate({
+                path: 'businessId',
+                match: { isBanned: false },
+                select: 'businessName ownerName'
+            });
+
+        // Filter out products where businessId is null (meaning the business was banned and excluded by match)
+        const visibleProducts = products.filter(p => p.businessId);
+
         res.status(200).json({
             success: true,
-            count: products.length,
-            data: products,
+            count: visibleProducts.length,
+            data: visibleProducts,
         });
     } catch (error) {
         res.status(400).json({
@@ -75,12 +85,16 @@ exports.getAllProducts = async (req, res) => {
 // @access  Public
 exports.getProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).populate('businessId', '_id businessName ownerName location contactInfo bio isActive');
+        const product = await Product.findById(req.params.id).populate({
+            path: 'businessId',
+            select: '_id businessName ownerName location contactInfo bio'
+        });
 
-        if (!product) {
+        // Check if product exists and if the business is NOT banned (or handle if business is null)
+        if (!product || (product.businessId && product.businessId.isBanned)) {
             return res.status(404).json({
                 success: false,
-                error: 'Product not found',
+                error: 'Product not found or seller is currently inactive',
             });
         }
 
@@ -177,6 +191,41 @@ exports.deleteProduct = async (req, res) => {
         res.status(200).json({
             success: true,
             data: {},
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};
+
+// @desc    Get all products grouped by business (Admin only)
+// @route   GET /api/products/admin/all
+// @access  Private/Admin
+exports.getAdminProducts = async (req, res) => {
+    try {
+        const products = await Product.find().populate('businessId', 'businessName ownerName isBanned');
+
+        // Group by business
+        const grouped = products.reduce((acc, product) => {
+            const businessId = product.businessId?._id || 'unknown';
+            const businessName = product.businessId?.businessName || 'Unknown Shop';
+
+            if (!acc[businessId]) {
+                acc[businessId] = {
+                    name: businessName,
+                    isBanned: product.businessId?.isBanned || false,
+                    products: []
+                };
+            }
+            acc[businessId].products.push(product);
+            return acc;
+        }, {});
+
+        res.status(200).json({
+            success: true,
+            data: Object.values(grouped),
         });
     } catch (error) {
         res.status(400).json({

@@ -42,6 +42,21 @@ exports.getBusiness = async (req, res) => {
     }
 };
 
+exports.getBusinesses = async (req, res) => {
+    try {
+        const businesses = await User.find();
+        res.status(200).json({
+            success: true,
+            data: businesses,
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};
+
 // @desc    Update business status
 // @route   PUT /api/business/status
 // @access  Private

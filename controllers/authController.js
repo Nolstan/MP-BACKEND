@@ -67,6 +67,13 @@ exports.login = async (req, res) => {
             });
         }
 
+        if (user.isBanned) {
+            return res.status(403).json({
+                success: false,
+                error: 'Your account has been banned. Please contact your service provider.',
+            });
+        }
+
         sendTokenResponse(user, 200, res);
     } catch (error) {
         res.status(400).json({
@@ -87,6 +94,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         data: {
             id: user._id,
             businessName: user.businessName,
+            role: user.role,
         },
     });
 };
